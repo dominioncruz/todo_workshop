@@ -1,16 +1,34 @@
 import express, { Express, Request, Response, Application } from "express";
-import dotenv from "dotenv";
-
-//For env File
-dotenv.config();
+import { host, mongo_uri, port } from "./app.config";
+import router from "./router/router";
+import connectDB from "./db/connection";
+import { errorHandlerMiddleware, NotFound } from "./middleware";
 
 const app: Application = express();
-const port = process.env.PORT || 8000;
+
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 app.get("/", (req: Request, res: Response) => {
   res.send("Hello there");
 });
 
-app.listen(port, () => {
-  console.log(`Server is running on http://localhost:${port}`);
-});
+// Routes
+app.use("", router);
+
+// 404 Not Found Middleware
+app.use(NotFound);
+
+// @ts-ignore
+app.use(errorHandlerMiddleware);
+
+// Start the server
+const startUpServer = async () => {
+  await connectDB(mongo_uri);
+  console.log("Database connection successful");
+  app.listen(port, host, () => {
+    console.log(`Server is running on http://${host}:${port}`);
+  });
+};
+
+startUpServer();
